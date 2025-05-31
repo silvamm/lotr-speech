@@ -1,0 +1,9 @@
+venv
+.idea
+__pycache__/
+config.py
+audios.db
+audios/*
+*.pdf
+*.ftz
+*.ini
