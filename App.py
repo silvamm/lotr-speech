@@ -8,9 +8,10 @@ from WindowCapture import WindowCapture
 from TextReader import text_reader
 from ImageReader import image_reader
 
-class AlgorithmRunner:
+class App:
 
     def run(self):
+        print("lotr-speech has started")
         window_capture = WindowCapture('Journeys in Middle-earth')
         image_cropper = ImageCropper()
         session_time = 'Session started: {}'.format(datetime.today())
@@ -23,11 +24,13 @@ class AlgorithmRunner:
 
             screenshot = window_capture.get_screenshot()
             found_img, max_loc = image_cropper.find_image(screenshot)
-           
+
+            #If I change the screen or click the cancel button, we should stop reading      
             if found_img is False:
                 self.set_variavel(found_img)
                 text_read = False
 
+            #I start looking for images to read if I don't have one and I'm not currently reading
             if found_img and text_read is False:
                 print('#'*100)
 

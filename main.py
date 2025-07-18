@@ -1,4 +1,4 @@
-from AlgorithmRunner import AlgorithmRunner
+from App import App
 
-app = AlgorithmRunner()
+app = App()
 app.run()

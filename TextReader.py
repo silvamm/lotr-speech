@@ -57,7 +57,7 @@ class CustomAudioPlayer:
 
 
 class TextReader(Observer):
-    reading = None
+    is_reading = None
     text_to_read = None
     text_to_read_array = None
     speech_history = []
@@ -70,13 +70,13 @@ class TextReader(Observer):
     def speech(self, text):
         self.time = time.time()
 
-        if len(self.speech_history) > 20:
+        if len(self.speech_history) > config.SPEECH_HISTORY_SIZE_LIMIT:
             self.speech_history.clear()
 
         filtered_array = filter(None, text.split('\n'))
         self.text_to_read_array = list(filtered_array)
 
-        text_without_commands = self.remove_board_commands()
+        text_without_commands = self.remove_game_commands()
         self.text_to_read = ' '.join(text_without_commands)
         self.clean_up_text()
         
@@ -139,13 +139,13 @@ class TextReader(Observer):
             response_format="wav",
         ) as response:
             print(f"Speech process time: {time.time() - self.time}")
-            self.reading = True
+            self.is_reading = True
             await self.customPlayer.play(response, hashlib.sha256(self.text_to_read.encode("utf-8")).hexdigest())
 
         if self.text_to_read == text_to_read_now:
             self.speech_history.append(self.text_to_read)
 
-        self.reading = False
+        self.is_reading = False
 
     def read_text_chat_gpt(self):
         text_to_read_now = self.text_to_read
@@ -160,7 +160,7 @@ class TextReader(Observer):
         ) as response:
             response.stream_to_file(speech_file_path)
 
-        self.reading = True    
+        self.is_reading = True    
 
         media = vlc.Media(speech_file_path)
         self.player.set_media(media)
@@ -175,29 +175,29 @@ class TextReader(Observer):
         text_to_read_now = self.text_to_read
         speech_synthesizer.stop_speaking_async()
         
-        self.reading = True
+        self.is_reading = True
         speech_synthesizer.speak_text_async(self.text_to_read).get()
 
         if self.text_to_read == text_to_read_now:
             self.speech_history.append(self.text_to_read)
 
-        self.reading = False
+        self.is_reading = False
 
     #image changed
-    def update(self, value):
-        if self.player.is_playing() and value is False:
+    def update(self, img_found):
+        if self.player.is_playing() and img_found is False:
             print(f"Force stop audio")
             self.player.stop()
-            self.reading = False
+            self.is_reading = False
             self.text_to_read = None
 
-        if self.reading and value is False:
+        if self.is_reading and img_found is False:
             print(f"Force stop audio")
             speech_synthesizer.stop_speaking_async()
-            self.reading = False
+            self.is_reading = False
             self.text_to_read = None
 
-    def remove_board_commands(self):
+    def remove_game_commands(self):
         result_parts = []
         for txt in self.text_to_read_array:
 
