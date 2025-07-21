@@ -4,6 +4,7 @@ __pycache__/
 config.py
 audios.db
 audios/*
+audios*
 *.pdf
 *.ftz
 *.ini

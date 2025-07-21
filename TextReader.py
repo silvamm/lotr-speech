@@ -1,19 +1,23 @@
 import threading
-import azure.cognitiveservices.speech as speechsdk
 import re
 import time
 import asyncio
-import vlc
 import tempfile
 import sqlite3
 import hashlib
 import config
 import os
+from shutil import copy
 
-from pathlib import Path
+import vlc
+import pyaudio
+import wave
+
+import azure.cognitiveservices.speech as speechsdk
 from openai import OpenAI
 from openai import AsyncOpenAI
-from shutil import copy
+from pathlib import Path
+
 from LanguageValidator import language_validator
 from Observer import Observer
 
@@ -30,7 +34,7 @@ speech_config = speechsdk.SpeechConfig(
 speech_config.speech_synthesis_voice_name = "pt-BR-ThalitaNeural"
 speech_config.speech_synthesis_language = 'pt-BR'
 
-speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+azure_speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
 
 #DATABASE
 connection = sqlite3.connect('audios.db')
@@ -40,11 +44,69 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS audios (
                     id TEXT PRIMARY KEY
                 )''')
 
-class CustomAudioPlayer:
+#AUDIOS
+class PyAudioStreamPlayer:
+    stream = None
+    is_playing = False
+    player = None
+
+    async def play(self, response, sha256):
+        self.player = pyaudio.PyAudio()
+
+        first_chunk_sent = False
+        start = time.time()
+
+        self.create_stream()
+        self.is_playing = True
+
+        pcm_audio = bytearray()
+
+        async for chunk in response.iter_bytes(4096):
+            if not self.is_playing:
+                break
+
+            pcm_audio.extend(chunk)
+            self.stream.write(chunk)
+
+            if not first_chunk_sent:
+                elapsed_time = time.time() - start
+                print(f"Time taken to send the first chunk: {elapsed_time:.4f}")
+                first_chunk_sent = True
+
+        self.save_audio(pcm_audio, sha256)
+
+    def create_stream(self):
+        self.stream = self.player.open(format=pyaudio.paInt16, 
+                            channels=1,
+                            rate=24000,
+                            output=True,
+                            frames_per_buffer=2048)
+    def stop(self):
+        self.is_playing = False
+        time.sleep(1) # Prevent buffer underrun
+        self.stream.stop_stream()   
+        self.stream.close()
+        self.player.terminate()
+    
+    def save_audio(self, pcm_bytes, sha256):
+        file_name = f"audios/{sha256}.wav"
+        output_path = Path(__file__).parent /file_name
+
+        with wave.open(str(output_path), 'wb') as wav_file:
+            wav_file.setnchannels(1)         # Mono
+            wav_file.setsampwidth(2)         # 16 bits = 2 bytes
+            wav_file.setframerate(24000)     # 24 kHz
+            wav_file.writeframes(pcm_bytes)
+
+        print(f"Saved audio - {file_name}")
+
+
+class VlcWavAudioPlayer:
     def __init__(self, vlc):
         self.player = vlc
 
     async def play(self, response, sha256):
+        start = time.time()
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             async for chunk in response.iter_bytes():
                 tmp.write(chunk)
@@ -53,8 +115,8 @@ class CustomAudioPlayer:
         media = vlc.Media(tmp_path)
         self.player.set_media(media)
         self.player.play()
+        print("CustomAudioPlayer playing time {:.4f} ".format(time.time() - start))
         copy(tmp_path, Path(__file__).parent /f"audios/{sha256}.wav")
-
 
 class TextReader(Observer):
     is_reading = None
@@ -65,7 +127,8 @@ class TextReader(Observer):
     count_cloud_speech_call = 0
     time = None
     player = vlc.MediaPlayer()
-    customPlayer = CustomAudioPlayer(player)
+    vlcPlayer = VlcWavAudioPlayer(player)
+    pyAudioStreamPlayer = PyAudioStreamPlayer()
 
     def speech(self, text):
         self.time = time.time()
@@ -81,11 +144,12 @@ class TextReader(Observer):
         self.clean_up_text()
         
         if self.text_to_read in self.speech_history:
-            print("Pulando leitura - Se encontra no histórico")
+            print(f"Pulando leitura - Se encontra no histórico - Configuração de {config.SPEECH_HISTORY_SIZE_LIMIT} espaços")
             return
         
         predictions, is_valid = language_validator.validate(self.text_to_read)
         if not is_valid:
+            print(f"Found languages: {predictions}")
             print(f"Pulando leitura - O texto não é válido - Texto: {self.text_to_read}")
             return
         
@@ -98,21 +162,27 @@ class TextReader(Observer):
 
             if len(rows) == 1:
                 hash = rows[0][0]
-                print(f"Hash - {hash}")
+                print(f"Text hash - {hash}")
                 audio_path = f"audios/{rows[0][0]}.wav"
                 if os.path.exists(audio_path):
-                    print(f"Arquivo de áudio encontrado: {audio_path}")
-                    media = vlc.Media(audio_path)
-                    self.player.set_media(media)
-                    self.player.play()
-                    self.speech_history.append(self.text_to_read)
-                    return
+                    print(f"Found audio: {audio_path}")
+                    if(config.PLAY_AUDIOS):
+                        media = vlc.Media(audio_path)
+                        self.player.set_media(media)
+                        self.player.play()
+                        self.speech_history.append(self.text_to_read)
+                        return
+                    else:
+                        print("Configuration - Do not play audios")
                 else:
                     cursor.execute(f"DELETE FROM audios where id = '{hash}'")
                     print(f"Arquivo de áudio não encontrado: {audio_path} - Excluído da base de dados")
             
-            cursor.execute("INSERT INTO audios (id) VALUES (?)", (sha256_hash,))
-            connection.commit()    
+            if(config.SAVE_AUDIOS_DB):
+                cursor.execute("INSERT INTO audios (id) VALUES (?)", (sha256_hash,))
+                connection.commit()   
+            else:
+                print("Configuration - Do not save audios in database")
 
             t1 = threading.Thread(target=self.run_chat_gpt_async_in_thread, daemon=True)
             t1.start()
@@ -135,12 +205,12 @@ class TextReader(Observer):
             model="gpt-4o-mini-tts",
             voice="coral",
             input=self.text_to_read,
-            instructions="Leia como um narrador de \"O Senhor dos Anéis\", com emoção. Leia em português do Brasil",
-            response_format="wav",
+            instructions="Leia como um narrador de \"O Senhor dos Anéis\". Analise o contéudo do texto e use um tom que faça sentido com ele. Leia em português do Brasil.",
+            response_format="pcm",
         ) as response:
             print(f"Speech process time: {time.time() - self.time}")
             self.is_reading = True
-            await self.customPlayer.play(response, hashlib.sha256(self.text_to_read.encode("utf-8")).hexdigest())
+            await self.pyAudioStreamPlayer.play(response, hashlib.sha256(self.text_to_read.encode("utf-8")).hexdigest())
 
         if self.text_to_read == text_to_read_now:
             self.speech_history.append(self.text_to_read)
@@ -156,7 +226,7 @@ class TextReader(Observer):
             model="gpt-4o-mini-tts",
             voice="coral",
             input=text_to_read_now,
-            instructions="Leia como um narrador de \"O Senhor dos Anéis\", com emoção. Leia em português do Brasil",
+            instructions="Leia como um narrador de \"O Senhor dos Anéis\". Analise o contéudo do texto e use um tom que faça sentido com ele. Leia em português do Brasil.",
         ) as response:
             response.stream_to_file(speech_file_path)
 
@@ -166,17 +236,17 @@ class TextReader(Observer):
         self.player.set_media(media)
         self.player.play()
 
-        print(f"Speech process time: {time.time() - self.time}")
+        print("Speech process time: {:.4f}".format(time.time() - self.time))
         if self.text_to_read == text_to_read_now:
             self.speech_history.append(self.text_to_read)
 
 
     def read_text_azure(self):
         text_to_read_now = self.text_to_read
-        speech_synthesizer.stop_speaking_async()
+        azure_speech_synthesizer.stop_speaking_async()
         
         self.is_reading = True
-        speech_synthesizer.speak_text_async(self.text_to_read).get()
+        azure_speech_synthesizer.speak_text_async(self.text_to_read).get()
 
         if self.text_to_read == text_to_read_now:
             self.speech_history.append(self.text_to_read)
@@ -185,15 +255,22 @@ class TextReader(Observer):
 
     #image changed
     def update(self, img_found):
+
+        if self.pyAudioStreamPlayer.is_playing and img_found is False:
+            print(f"Force stop audio - pyaudio")
+            self.pyAudioStreamPlayer.stop()
+            self.is_reading = False
+            self.text_to_read = None
+
         if self.player.is_playing() and img_found is False:
-            print(f"Force stop audio")
+            print(f"Force stop audio - vlc")
             self.player.stop()
             self.is_reading = False
             self.text_to_read = None
 
         if self.is_reading and img_found is False:
-            print(f"Force stop audio")
-            speech_synthesizer.stop_speaking_async()
+            print(f"Force stop audio - azure")
+            azure_speech_synthesizer.stop_speaking_async()
             self.is_reading = False
             self.text_to_read = None
 
@@ -292,6 +369,10 @@ class TextReader(Observer):
             if re.search(r"^Reduza a amec", txt, re.IGNORECASE):
                 break
             if re.search(r"^Realizar uma resist", txt, re.IGNORECASE):
+                break
+            if re.search(r"^Vire \d{1}", txt, re.IGNORECASE):
+                break
+            if re.search(r"Fa[cç]a aparecer", txt, re.IGNORECASE):
                 break
 
             result_parts.append(txt.strip())

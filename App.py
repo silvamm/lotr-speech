@@ -23,7 +23,7 @@ class App:
             loop_time = time.time()
 
             screenshot = window_capture.get_screenshot()
-            found_img, max_loc = image_cropper.find_image(screenshot)
+            found_img, max_loc = image_cropper.find_image_boost(screenshot)
 
             #If I change the screen or click the cancel button, we should stop reading      
             if found_img is False:
@@ -38,16 +38,16 @@ class App:
                 time.sleep(0.2)
 
                 screenshot = window_capture.get_screenshot()
-                screenshot_time = 'Screenshot time: {}'.format(time.time() - loop_time)
+                screenshot_time = 'Screenshot time: {:.4f}'.format(time.time() - loop_time)
                 #cv.imwrite('screenshot.jpg', screenshot)
 
                 screenshot, crop_img = image_cropper.crop_image(screenshot, max_loc)
                 crop_img = cv.cvtColor(crop_img, cv.COLOR_BGR2RGB)
-                crop_time = 'Crop time: {}'.format(time.time() - loop_time)
+                crop_time = 'Crop time: {:.4f}'.format(time.time() - loop_time)
                 #cv.imwrite('result.jpg', crop_img)
                 
                 text = image_reader.text_from_img(crop_img)
-                pytesseract_read_time = 'Tesseract read time: {}'.format(time.time() - loop_time)
+                pytesseract_read_time = 'Tesseract read time: {:.4f}'.format(time.time() - loop_time)
 
                 text_reader.speech(text)
                 text_read = True
