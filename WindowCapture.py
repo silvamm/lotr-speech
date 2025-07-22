@@ -7,7 +7,7 @@ import win32ui
 class WindowCapture:
     hwnd = None
 
-    def __init__(self, window_name):
+    def __init__(self):
         self.hwnd = win32gui.GetDesktopWindow()
 
     def get_screenshot(self):

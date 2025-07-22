@@ -1,4 +1,3 @@
-import cv2 as cv
 import time
 import sys 
 import signal
@@ -12,7 +11,7 @@ class App:
 
     def run(self):
         print("lotr-speech has started")
-        window_capture = WindowCapture('Journeys in Middle-earth')
+        window_capture = WindowCapture()
         image_cropper = ImageCropper()
         session_time = 'Session started: {}'.format(datetime.today())
 
@@ -42,7 +41,6 @@ class App:
                 #cv.imwrite('screenshot.jpg', screenshot)
 
                 screenshot, crop_img = image_cropper.crop_image(screenshot, max_loc)
-                crop_img = cv.cvtColor(crop_img, cv.COLOR_BGR2RGB)
                 crop_time = 'Crop time: {:.4f}'.format(time.time() - loop_time)
                 #cv.imwrite('result.jpg', crop_img)
                 
