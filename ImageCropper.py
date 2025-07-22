@@ -9,10 +9,6 @@ class ImageCropper:
         self.border = cv.imread('border.PNG', cv.IMREAD_UNCHANGED)
 
     def find_image(self, haystack_img):
-        scale_percent = 80  
-        haystack_small = cv.resize(haystack_img, None, fx=scale_percent/100, fy=scale_percent/100)
-        border_small = cv.resize(self.border, None, fx=scale_percent/100, fy=scale_percent/100)
-
         result_bottom = cv.matchTemplate(haystack_img,  self.border, cv.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result_bottom)
         if max_val > self.threshold:

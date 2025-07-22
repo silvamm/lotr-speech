@@ -200,7 +200,7 @@ class TextReader(Observer):
 
     async def read_text_chat_gpt_async(self):
         text_to_read_now = self.text_to_read
-    
+        chat_gpt_time = time.time()
         async with asyncOpenAi.audio.speech.with_streaming_response.create(
             model="gpt-4o-mini-tts",
             voice="coral",
@@ -208,7 +208,8 @@ class TextReader(Observer):
             instructions="Leia como um narrador de \"O Senhor dos Anéis\". Analise o contéudo do texto e use um tom que faça sentido com ele. Leia em português do Brasil.",
             response_format="pcm",
         ) as response:
-            print(f"Speech process time: {time.time() - self.time}")
+            print("Chat GPT process time: {:.4f}".format(time.time() - chat_gpt_time))
+            print("Speech process time: {:.4f}".format(time.time() - self.time))
             self.is_reading = True
             await self.pyAudioStreamPlayer.play(response, hashlib.sha256(self.text_to_read.encode("utf-8")).hexdigest())
 
@@ -257,19 +258,19 @@ class TextReader(Observer):
     def update(self, img_found):
 
         if self.pyAudioStreamPlayer.is_playing and img_found is False:
-            print(f"Force stop audio - pyaudio")
+            print(f"Stopping audio - pyaudio")
             self.pyAudioStreamPlayer.stop()
             self.is_reading = False
             self.text_to_read = None
 
         if self.player.is_playing() and img_found is False:
-            print(f"Force stop audio - vlc")
+            print(f"Stopping audio - vlc")
             self.player.stop()
             self.is_reading = False
             self.text_to_read = None
 
         if self.is_reading and img_found is False:
-            print(f"Force stop audio - azure")
+            print(f"Stopping audio - azure")
             azure_speech_synthesizer.stop_speaking_async()
             self.is_reading = False
             self.text_to_read = None

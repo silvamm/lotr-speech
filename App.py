@@ -1,3 +1,4 @@
+import cv2 as cv
 import time
 import sys 
 import signal
