@@ -5,6 +5,7 @@ import signal
 from ImageCropper import ImageCropper
 from datetime import datetime
 from WindowCapture import WindowCapture
+from WindowCapture import WindowCaptureMSS
 from TextReader import text_reader
 from ImageReader import image_reader
 
@@ -12,6 +13,7 @@ class App:
 
     def run(self):
         print("lotr-speech has started")
+        mss = WindowCaptureMSS()
         window_capture = WindowCapture()
         image_cropper = ImageCropper()
         session_time = 'Session started: {}'.format(datetime.today())
@@ -22,7 +24,7 @@ class App:
         while True:
             loop_time = time.time()
 
-            screenshot = window_capture.get_screenshot()
+            screenshot = mss.get_screenshot()
             found_img, max_loc = image_cropper.find_image_boost(screenshot)
 
             #If I change the screen or click the cancel button, we should stop reading      
@@ -37,7 +39,7 @@ class App:
                 # wait until the whole border appears
                 time.sleep(0.2)
 
-                screenshot = window_capture.get_screenshot()
+                screenshot = mss.get_screenshot()
                 screenshot_time = 'Screenshot time: {:.4f}'.format(time.time() - loop_time)
                 #cv.imwrite('screenshot.jpg', screenshot)
 

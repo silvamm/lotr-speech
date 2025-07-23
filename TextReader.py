@@ -73,7 +73,8 @@ class PyAudioStreamPlayer:
                 print(f"Time taken to send the first chunk: {elapsed_time:.4f}")
                 first_chunk_sent = True
 
-        self.save_audio(pcm_audio, sha256)
+        if(config.SAVE_AUDIOS):
+            self.save_audio(pcm_audio, sha256)
 
     def create_stream(self):
         self.stream = self.player.open(format=pyaudio.paInt16, 
@@ -129,6 +130,8 @@ class TextReader(Observer):
     player = vlc.MediaPlayer()
     vlcPlayer = VlcWavAudioPlayer(player)
     pyAudioStreamPlayer = PyAudioStreamPlayer()
+
+    prompt = "O texto a seguir é de um jogo de \"O Senhor dos Anéis\". Analise o conteúdo dele e use um tom que melhor se encaixa. Leia em português do Brasil."
 
     def speech(self, text):
         self.time = time.time()
@@ -205,7 +208,7 @@ class TextReader(Observer):
             model="gpt-4o-mini-tts",
             voice="coral",
             input=self.text_to_read,
-            instructions="Leia como um narrador de \"O Senhor dos Anéis\". Analise o contéudo do texto e use um tom que faça sentido com ele. Leia em português do Brasil.",
+            instructions=self.prompt,
             response_format="pcm",
         ) as response:
             print("Chat GPT process time: {:.4f}".format(time.time() - chat_gpt_time))
@@ -227,7 +230,7 @@ class TextReader(Observer):
             model="gpt-4o-mini-tts",
             voice="coral",
             input=text_to_read_now,
-            instructions="Leia como um narrador de \"O Senhor dos Anéis\". Analise o contéudo do texto e use um tom que faça sentido com ele. Leia em português do Brasil.",
+            instructions=self.prompt,
         ) as response:
             response.stream_to_file(speech_file_path)
 
