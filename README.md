@@ -11,6 +11,15 @@ To reduce costs, generated audio files are saved and reused whenever the same te
 - **Tesseract OCR**  
    Install guide: [github.com/UB-Mannheim/tesseract/wiki](https://github.com/UB-Mannheim/tesseract/wiki)
 
+- **OpenAI API Account**
+
+   This project requires an OpenAI API key to use text-to-speech feature. To get started, you need to:
+
+   Create an account at https://openai.com/api/
+
+   Obtain an API key from your account dashboard
+
+   Make sure you have some credits available 
 
 ## Installation
 
