@@ -49,3 +49,11 @@ OPENAI_API_KEY = "your-api-key-here"
 
 This project is inspired by:  
 https://github.com/rpiotrow96/LOTR-Lector
+
+## Other Projects
+
+Mage Knight - Solo Table
+
+https://silvamm.github.io/mage-knight-solo-table/
+
+https://github.com/silvamm/mage-knight-solo-table
