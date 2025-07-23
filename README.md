@@ -1,16 +1,16 @@
 # lotr-speech - readme - wip
 
 I'm using OpenCV and Tesseract OCR to detect text within the game and convert images to text, respectively. The extracted text is then sent to OpenAI for narration. Between this main flow, there are several optimizations to improve performance and efficiency. The project is currently focused on Brazilian Portuguese.
-To reduce costs, generated audio files are saved and reused whenever the same text appears again. These records are stored in a SQLite database.
+To reduce costs, generated audio files are saved and reused whenever the same text appears again. These records are stored in a SQLite database
 
 ## Main Features
-- Uses the latest OpenAI TTS model, providing a much more immersive and natural reading experience.
+- Uses the latest OpenAI TTS model, providing a much more immersive and natural reading experience
 
 - Streams audio playback before saving: Instead of waiting for the full audio to be generated before playback, this project starts streaming the audio immediately, ensuring a faster and smoother experience. The audio is then saved in the background for future reuse
 
-- Implements a smart caching system: previously generated audios are saved and reused when the same text appears again (which happens frequently with UI elements like interaction icons). This makes repeated playback almost instant — and helps save money on API usage.
+- Implements a smart caching system: previously generated audios are saved and reused when the same text appears again (which happens frequently with UI elements like interaction icons). This makes repeated playback almost instant — and helps save money on API usage
 
-- Optional one-time reading mechanism: You can configure the system to read each piece of text only once, helping avoid unnecessary repetition and improving overall flow.
+- Optional one-time reading mechanism: You can configure the system to read each piece of text only once, helping avoid unnecessary repetition and improving overall flow
 
 ## Requirements
 
