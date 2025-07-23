@@ -34,4 +34,9 @@ SAVE_AUDIOS = True
 
 TESSERACT_PATH = r"C:\Path\To\tesseract.exe"	# Example: C:\Program Files\Tesseract-OCR\tesseract.exe
 OPENAI_API_KEY = "your-api-key-here"
+```
 
+## Thanks To
+
+This project is inspired by:  
+https://github.com/rpiotrow96/LOTR-Lector
