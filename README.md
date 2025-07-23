@@ -6,9 +6,9 @@ To reduce costs, generated audio files are saved and reused whenever the same te
 ## Main Features
 - Uses the latest OpenAI TTS model, providing a much more immersive and natural reading experience.
 
-- Streams audio playback before saving: Instead of waiting for the full audio to be generated before playback, this project starts streaming the audio immediately, ensuring a faster and smoother experience. The audio is then saved in the background for future reuse.
+- Streams audio playback before saving: Instead of waiting for the full audio to be generated before playback, this project starts streaming the audio immediately, ensuring a faster and smoother experience. The audio is then saved in the background for future reuse
 
-- Implements a smart caching system: previously generated audios are saved and reused when the same text appears again (which happens frequently with UI elements like interaction icons). This makes repeated playback almost instant.
+- Implements a smart caching system: previously generated audios are saved and reused when the same text appears again (which happens frequently with UI elements like interaction icons). This makes repeated playback almost instant — and helps save money on API usage.
 
 - Optional one-time reading mechanism: You can configure the system to read each piece of text only once, helping avoid unnecessary repetition and improving overall flow.
 
