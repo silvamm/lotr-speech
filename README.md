@@ -1,4 +1,4 @@
-# lotr-speech - Readme - WIP
+# lotr-speech - readme - wip
 
 I'm using OpenCV and Tesseract OCR to detect text within the game and convert images to text, respectively. The extracted text is then sent to OpenAI for narration. Between this main flow, there are several optimizations to improve performance and efficiency. The project is currently focused on Brazilian Portuguese.
 To reduce costs, generated audio files are saved and reused whenever the same text appears again. These records are stored in a SQLite database.
