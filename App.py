@@ -47,7 +47,7 @@ class App:
                 crop_time = 'Crop time: {:.4f}'.format(time.time() - loop_time)
                 #cv.imwrite('result.jpg', crop_img)
                 
-                text = image_reader.text_from_img(crop_img)
+                text = image_reader.text_from_img_boost(crop_img)
                 pytesseract_read_time = 'Tesseract read time: {:.4f}'.format(time.time() - loop_time)
 
                 text_reader.speech(text)

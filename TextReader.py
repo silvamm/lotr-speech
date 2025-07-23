@@ -131,7 +131,8 @@ class TextReader(Observer):
     vlcPlayer = VlcWavAudioPlayer(player)
     pyAudioStreamPlayer = PyAudioStreamPlayer()
 
-    prompt = "O texto a seguir é de um jogo de \"O Senhor dos Anéis\". Analise o conteúdo dele e use um tom que melhor se encaixa. Leia em português do Brasil."
+    prompt = "Este texto faz parte de um jogo ambientado no universo de O Senhor dos Anéis. Analise o conteúdo dele e use o tom que melhor se adequar. Leia em português do Brasil."
+    model = "gpt-4o-mini-tts"
 
     def speech(self, text):
         self.time = time.time()
@@ -205,7 +206,7 @@ class TextReader(Observer):
         text_to_read_now = self.text_to_read
         chat_gpt_time = time.time()
         async with asyncOpenAi.audio.speech.with_streaming_response.create(
-            model="gpt-4o-mini-tts",
+            model=self.model,
             voice="coral",
             input=self.text_to_read,
             instructions=self.prompt,
@@ -227,7 +228,7 @@ class TextReader(Observer):
         speech_file_path = Path(__file__).parent / "speech.mp3"
 
         with clientOpenAI.audio.speech.with_streaming_response.create(
-            model="gpt-4o-mini-tts",
+            model=self.model,
             voice="coral",
             input=text_to_read_now,
             instructions=self.prompt,
